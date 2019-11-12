@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function open_weather_map_menu()
+{
+  $items = array();
+
+  $items['admin/config/content/weather'] = array(
+    'title' => 'weather settings',
+    'description' => ' weather config',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('weather_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+
+  );
+  $items['weather/%'] = array(
+    'title' => 'open weather',
+    'description' => ' weather page',
+    'page callback' => 'open_weather_page',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+
+  );
+
+  return $items;
+}
+
+
+function weather_admin_settings()
+{
+  $form['location'] = array(
+    '#title' => 'your location',
+    '#type' => 'textfield',
+    '#required' => true
+  );
+  $form['language'] = array(
+    '#title' => 'your language',
+    '#type' => 'textfield',
+    '#required' => true
+  );
+  $form['apiKey'] = array(
+    '#title' => 'api key',
+    '#type' => 'textfield',
+    '#required' => true
+  );
+  return system_settings_form($form);
+}
+
+function open_weather_page($var)
+{
+  $arrayVar = explode(",", $var);
+
+  $apiKey = variable_get('apiKey');
+
+  $result = array(
+    "loc" => $arrayVar[0],
+    "lang" => $arrayVar[1]
+  );
+  $content = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=' . $result['loc'] . '&lang=' . $result['lang'] . '&appid=' . $apiKey . '');
+  $data = json_decode($content, true);
+  return theme('open_weather_map', array('data' => $data));
+
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function open_weather_map_block_info()
+{
+  $blocks['open_weather_map'] = array(
+    'info' => t('open_weather_map'),
+    'cache' => DRUPAL_NO_CACHE
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ * @param string $delta
+ * @return array
+ */
+function open_weather_map_block_view($delta = '')
+{
+  $block = array();
+  switch ($delta) {
+    case  'open_weather_map':
+      $block['title'] = t('weather');
+      $block['content'] = open_weather_map_get_content();
+      break;
+  }
+  return $block;
+
+}
+
+/**
+ * Implements hook_theme().
+ */
+function open_weather_map_theme()
+{
+  $theme = array();
+  $theme['open_weather_map'] = array(
+    'template' => 'open_weather_map',
+    'arguments' => array('data' => null)
+  );
+  return $theme;
+}
+
+function open_weather_map_get_content()
+{
+  $apiKey = variable_get('apiKey');
+  $location = variable_get('location');
+  $language = variable_get('language');
+  $content = file_get_contents('https://api.openweathermap.org/data/2.5/weather?q=' . $location . '&lang=' . $language . '&appid=' . $apiKey . '');
+  $data = json_decode($content, true);
+  return theme('open_weather_map', array('data' => $data));
+}
+

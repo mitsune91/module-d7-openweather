@@ -1,0 +1,4 @@
+name = Open Weather Map
+description = Display the meteo on the position of your choices
+core = 7.x
+configure = admin/config/content/weather
